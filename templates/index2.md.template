@@ -1,0 +1,15 @@
+---
+title: {{ topic }}
+description: Describe {{ topic }}
+date: 2022-01-01
+
+extra:
+  image: image.webp
+taxonomies:
+  tags:
+    - what type of wine is {{ topic }}
+    - origin of {{ topic }}
+---
+
+### About {{ topic }}
+

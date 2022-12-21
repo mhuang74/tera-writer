@@ -7,8 +7,9 @@ use clap::{crate_name, crate_version, Parser};
 use env_logger::Env;
 use log::{debug, info, trace};
 use opts::*;
-use std::{fs::canonicalize, fs::File, io::Write, string::String};
+use std::{fs::{canonicalize, self}, fs::File, io::Write, string::String, path::{Path, PathBuf}};
 use tera::{Context, Tera};
+use regex::Regex;
 
 fn main() -> Result<(), String> {
 	env_logger::Builder::from_env(Env::default().default_filter_or("none")).init();
@@ -20,14 +21,13 @@ fn main() -> Result<(), String> {
 	let template = Template::load(&opts.template).expect("Failed reading the template");
 	trace!("template:\n{}", template);
 
-	let output = opts.out.to_owned();
-	let mut include = opts.include;
 	let mut path = canonicalize(&opts.template).unwrap();
+	let mut output_path = if let Some(out_path) = &opts.output_path {
+		canonicalize(out_path).unwrap()
+	} else {
+		PathBuf::new()
+	};
 
-	if opts.include_path.is_some() {
-		include = true;
-		path = canonicalize(opts.include_path.as_ref().unwrap()).unwrap();
-	}
 
 	let mut wrapped_context = wrapped_context::WrappedContext::new(opts);
 	wrapped_context.create_context();
@@ -35,38 +35,45 @@ fn main() -> Result<(), String> {
 	let context: &Context = wrapped_context.context();
 	trace!("context:\n{:#?}", context);
 
-	let rendered;
+	let mut rendered : String = String::default();
 
-	if include {
-		let mut dir = path.to_str().unwrap();
+	let re_non_alpha : Regex = Regex::new(r"[[:^alpha:]]").unwrap();
+	let re_spaces : Regex = Regex::new(r"[ ]+").unwrap();
 
-		if path.is_file() {
-			dir = path.parent().unwrap().to_str().unwrap();
-		}
+	let topics = context.get("topics").unwrap().as_array().unwrap();
 
-		let glob = dir.to_owned() + "/**/*";
+	info!("Generating posts for {} topics", topics.len());
 
-		let mut tera = match Tera::new(&glob) {
-			Ok(t) => t,
-			Err(e) => {
-				println!("Parsing error(s): {}", e);
-				::std::process::exit(1);
-			}
-		};
+	for topic in topics {
+		trace!("topic: {:#?}", topic);
 
+		let stripped = re_non_alpha.replace_all(topic.as_str().unwrap(), " ");
+		let directory = re_spaces.replace_all(stripped.as_ref(), "_");
 
-		rendered = tera.render_str(&template, context).unwrap();
-	} else {
-		rendered = Tera::one_off(&template, context, false).unwrap();
+		trace!("directory: {:#?}", directory);
+
+		let mut my_path = output_path.clone();
+		my_path.push(directory.as_ref());
+		fs::create_dir(&my_path);
+		my_path.push("index.md");
+
+		debug!("Saving to {}", my_path.display());
+
+		let mut ctx : Context = Context::new();
+		ctx.insert("topic", topic);
+
+		rendered = Tera::one_off(&template, &ctx, false).unwrap();
+
+		trace!("{}", rendered);
+
+		let mut file = File::create(my_path).expect("Failed opening output file");
+		file.write_all(rendered.as_bytes()).map_err(|e| e.to_string());
+
 	}
 
-	println!("{}", rendered);
 
-	if let Some(out_file) = output {
-		debug!("Saving to {}", out_file.display());
-		let mut file = File::create(out_file).expect("Failed opening output file");
-		return file.write_all(rendered.as_bytes()).map_err(|e| e.to_string());
-	}
+
+
 
 	Ok(())
 }

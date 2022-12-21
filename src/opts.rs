@@ -10,20 +10,11 @@ pub struct Opts {
 	#[clap(short, long)]
 	pub template: PathBuf,
 
-	/// This flag tells the command to parse all templates found in the same
-	/// path where the given template is located.
-	#[clap(short, long, visible_alias = "inherit")]
-	pub include: bool,
-
-	/// Option to define a different path from which search and parse templates.
-	#[clap(long, visible_alias = "inherit-path")]
-	pub include_path: Option<PathBuf>,
-
-	/// Location of the input data in JSON format.
+	/// Location of post topic list in a single JSON list).
 	#[clap(index = 1)]
 	pub context: Option<PathBuf>,
 
-	/// Optional output file. If not passed, using stdout.
+	/// Optional output path. If not passed, using current directory.
 	#[clap(short, long)]
-	pub out: Option<PathBuf>,
+	pub output_path: Option<PathBuf>,
 }
