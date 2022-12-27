@@ -33,7 +33,7 @@ fn main() -> Result<()> {
 
     let wrapped = wrapped_context::WrappedContext::new(&opts.context);
     let context: &Context = wrapped.context();
-    trace!("context:\n{:#?}", context);
+    debug!("context:\n{:#?}", context);
 
     let output_path = if let Some(out_path) = &opts.output_path {
         canonicalize(out_path).unwrap()
@@ -47,7 +47,7 @@ fn main() -> Result<()> {
 
         let template_string = Template::load(template_path).expect("Failed reading the template");
 
-        trace!("template:\n{}", template_string);
+        debug!("template:\n{}", template_string);
 
         // use Tera to expand template
         let mut tera = setup_tera(template_path).expect("Failed to setup Tera");
@@ -62,24 +62,24 @@ fn main() -> Result<()> {
 
         let mut rendered: String;
 
-        for topic in topics {
-            info!("topic: {:#?}", topic);
+        for (idx, topic) in topics.iter().enumerate() {
+            info!("topic[{}]: {:#?}", idx, topic);
 
             let mut ctx: Context = Context::new();
             ctx.insert("topic", topic);
 
+            // HACK: set cost=4 since currently calling openai via 4 prompts per template
             while user_state.check_and_modify(&rate_limit, 4).is_err() {
-                info!("Rate limited...sleeping...");
+                info!("Rate limited..sleeping");
                 thread::sleep(Duration::from_millis(1000));
-                info!("Rate limited...waking up...");
             }
 
             rendered = tera.render_str(&template_string, &ctx).unwrap();
-            debug!("Rendered: {}", rendered);
+            trace!("Rendered: {}", rendered);
 
             let mut my_path = create_topic_directory(&output_path, topic.as_str().unwrap());
             my_path.push("index.md");
-            debug!("Saving to {}", my_path.display());
+            trace!("Saving to {}", my_path.display());
 
             let mut file = File::create(my_path).expect("Failed opening output file");
             file.write_all(rendered.as_bytes())
@@ -126,7 +126,9 @@ fn setup_tera(template_path: &Path) -> Result<Tera> {
             .expect("No prompt given")
             .as_str()
             .unwrap();
-        debug!("Prompt: {}", prompt);
+
+        trace!("Prompt: {}", prompt);
+
         let tokens = args
             .get("tokens")
             .expect("No token count given")
@@ -142,7 +144,7 @@ fn setup_tera(template_path: &Path) -> Result<Tera> {
             .complete_prompt_sync(completion_args.prompt(prompt).build()?)
             .unwrap();
 
-        debug!("Completion: {:#?}", completion);
+        trace!("Completion: {:#?}", completion);
 
         Ok(completion.to_string().trim().into())
     }
@@ -159,18 +161,16 @@ fn create_topic_directory(output_path: &Path, topic: &str) -> PathBuf {
     let stripped = re_non_alpha.replace_all(topic, " ");
     let directory = re_spaces.replace_all(stripped.as_ref(), "_");
 
-    debug!("directory: {:#?}", directory);
-
     let mut my_path: PathBuf = PathBuf::from(output_path);
     my_path.push(directory.as_ref());
 
     // create directory if not exist
     match fs::create_dir(&my_path) {
         Err(e) => {
-            trace!("Unable to create directory {}: {}", directory, e);
+            trace!("Unable to create directory {:#?}: {}", my_path, e);
         }
         Ok(()) => {
-            trace!("Created Dir: {}", directory);
+            trace!("Created Dir: {:#?}", my_path);
         }
     };
 
