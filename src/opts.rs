@@ -1,20 +1,19 @@
-use clap::{crate_authors, crate_version, Parser};
+use clap::Parser;
 use std::path::PathBuf;
 
-/// Command line ai writer using Tera templating engine.
-/// Input topic list provided in JSON format.
+/// CLI that couples Tera templates with OpenAI Completion API
 #[derive(Debug, Parser)]
-#[clap(version = crate_version!(), author = crate_authors!())]
+#[command(author, version, about, long_about = None)]
 pub struct Opts {
-    /// Location of the template.
-    #[clap(short, long)]
-    pub template: PathBuf,
+    /// JSON file with topics and prompts for Completion API, or used as data source when Tera template is specified.
+    #[arg(index = 1)]
+    pub context: PathBuf,
 
-    /// Location of post topic list in a single JSON list).
-    #[clap(index = 1)]
-    pub context: Option<PathBuf>,
+    /// Tera template to inject JSON data into.
+    #[arg(short, long)]
+    pub template: Option<PathBuf>,
 
-    /// Optional output path. If not passed, using current directory.
-    #[clap(short, long)]
+    /// Output path [Default: current directory]
+    #[arg(short, long)]
     pub output_path: Option<PathBuf>,
 }
