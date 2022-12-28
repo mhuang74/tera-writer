@@ -163,6 +163,9 @@ fn main() -> Result<()> {
             }
 
             debug!("Output context: {:#?}", output_context_list);
+
+            
+
         } else {
             info!("No prompts found. Nothing to do.");
         }
