@@ -11,7 +11,7 @@ use log::{debug, info, trace};
 use openai_api::{api::CompletionArgs, Client};
 use opts::*;
 use regex::Regex;
-use serde_json::Value;
+use serde_json::{Value, Map};
 use std::{
     collections::HashMap,
     fs::File,
@@ -31,9 +31,17 @@ fn main() -> Result<()> {
     let opts: Opts = Opts::parse();
     debug!("opts:\n{:#?}", opts);
 
-    let wrapped = wrapped_context::WrappedContext::new(&opts.context);
-    let context: &Context = wrapped.context();
-    debug!("context:\n{:#?}", context);
+    let wrapped_context = wrapped_context::WrappedContext::new(&opts.context);
+    let input_context: &Context = wrapped_context.context();
+    trace!("input context:\n{:#?}", input_context);
+
+    // assume context file has a "contexts" object holding a list of context dictionaries
+    let contexts = input_context
+        .get("contexts")
+        .expect("Missing 'contexts' as list of dictionaries")
+        .as_array()
+        .unwrap();
+    info!("Generating contents for {} contexts", contexts.len());
 
     let output_path = if let Some(out_path) = &opts.output_path {
         canonicalize(out_path).unwrap()
@@ -52,32 +60,34 @@ fn main() -> Result<()> {
         // use Tera to expand template
         let mut tera = setup_tera(template_path).expect("Failed to setup Tera");
 
-        // render template using list of topics
-        let topics = context.get("topics").unwrap().as_array().unwrap();
-        info!("Generating posts for {} topics", topics.len());
-
         // setup rate limit
         let rate_limit = RateLimit::new(60, Duration::from_secs(60));
         let mut user_state = GcraState::default();
 
         let mut rendered: String;
 
-        for (idx, topic) in topics.iter().enumerate() {
-            info!("topic[{}]: {:#?}", idx, topic);
+        for (idx, context) in contexts.iter().enumerate() {
+            let topic = context
+                .get("topic")
+                .expect("Missing 'topic' element")
+                .as_str()
+                .unwrap();
 
-            let mut ctx: Context = Context::new();
-            ctx.insert("topic", topic);
+            debug!("Processing topic[{}]: {}", idx, topic);
+
+            let tera_context: tera::Context = Context::from_value(context.to_owned())?;
+            trace!("Tera context[{}]: {:#?}", idx, tera_context);
 
             // HACK: set cost=4 since currently calling openai via 4 prompts per template
             while user_state.check_and_modify(&rate_limit, 4).is_err() {
-                info!("Rate limited..sleeping");
+                trace!("Rate limited..sleeping");
                 thread::sleep(Duration::from_millis(1000));
             }
 
-            rendered = tera.render_str(&template_string, &ctx).unwrap();
+            rendered = tera.render_str(&template_string, &tera_context).unwrap();
             trace!("Rendered: {}", rendered);
 
-            let mut my_path = create_topic_directory(&output_path, topic.as_str().unwrap());
+            let mut my_path = create_topic_directory(&output_path, topic);
             my_path.push("index.md");
             trace!("Saving to {}", my_path.display());
 
@@ -89,6 +99,73 @@ fn main() -> Result<()> {
     } else {
         // expand input JSON via Completion API
         info!("Expanding JSON file: {:#?}", &opts.context);
+
+        // if there are prompt templates, expand them via Tera then call OpenAI Completion API
+        if let Some(prompt_template_map) = input_context.get("prompt_template_map") {
+
+            // prepare output context and original context copied
+            let mut output_context_list = Vec::<Map<String,Value>>::with_capacity(contexts.len());
+            for (idx, context) in contexts.iter().enumerate() {
+                let mut output_context_map = Map::<String, Value>::new();
+                output_context_map.append(&mut context.as_object().unwrap().clone());
+                output_context_list.push(output_context_map);
+            }
+
+            for (key, prompt_template) in prompt_template_map.as_object().unwrap() {
+                trace!("Prompt Template[{:#?}]: {:#?}", key, prompt_template);
+
+                let prompt_str = prompt_template.get("prompt").unwrap().as_str().unwrap();
+                trace!("Prompt[{}]: {}", key, prompt_str);
+
+                let tokens = prompt_template.get("tokens").unwrap().as_u64().unwrap();
+                trace!("Tokens[{}]: {}", key, tokens);
+
+                let mut prompts = Vec::<String>::with_capacity(contexts.len());
+
+                for (idx, context) in contexts.iter().enumerate() {
+                    let tera_context: tera::Context = Context::from_value(context.to_owned())?;
+                    trace!("Tera context[{}]: {:#?}", idx, tera_context);
+
+                    let final_prompt = Tera::one_off(prompt_str, &tera_context, false).unwrap();
+
+                    trace!("Prompt[{}] for context[{}]: {}", key, idx, final_prompt);
+
+                    prompts.push(final_prompt);
+                }
+
+                // construct CompletionArg with all prompts for current context
+
+                let completion_args = CompletionArgs::builder()
+                    .model("text-curie-001")
+                    .max_tokens(tokens)
+                    .temperature(0.7)
+                    .prompt(prompts)
+                    .build()
+                    .unwrap();
+
+                // call Completion API
+            
+                let api_token = std::env::var("OPENAI_API_KEY").expect("No openai api key found");
+                let client = Client::new(&api_token);
+            
+                let completion = client
+                    .complete_prompt_sync(completion_args)
+                    .unwrap();
+            
+                trace!("Completion[{}]: {:#?}", key, completion);
+
+
+                for (idx, context) in contexts.iter().enumerate() {
+                    let completion_str = completion.choices[idx].text.trim();
+                    let output_context_map = output_context_list.get_mut(idx).unwrap();
+                    output_context_map.insert(key.to_owned(), completion_str.to_owned().into());
+                }
+            }
+
+            debug!("Output context: {:#?}", output_context_list);
+        } else {
+            info!("No prompts found. Nothing to do.");
+        }
     };
 
     Ok(())
@@ -116,42 +193,52 @@ fn setup_tera(template_path: &Path) -> Result<Tera> {
         }
     };
 
-    // define and register custom tera function
-    fn openai_completion(args: &HashMap<String, Value>) -> Result<Value, tera::Error> {
-        let api_token = std::env::var("OPENAI_API_KEY").expect("No openai api key found");
-        let client = Client::new(&api_token);
-
-        let prompt = args
-            .get("prompt")
-            .expect("No prompt given")
-            .as_str()
-            .unwrap();
-
-        trace!("Prompt: {}", prompt);
-
-        let tokens = args
-            .get("tokens")
-            .expect("No token count given")
-            .as_u64()
-            .unwrap();
-
-        let completion_args = CompletionArgs::builder()
-            .model("text-curie-001")
-            .max_tokens(tokens)
-            .temperature(0.7);
-
-        let completion = client
-            .complete_prompt_sync(completion_args.prompt(prompt).build()?)
-            .unwrap();
-
-        trace!("Completion: {:#?}", completion);
-
-        Ok(completion.to_string().trim().into())
-    }
-
+    // register custom function to call openai completion api
     tera.register_function("openai_completion", openai_completion);
 
     Ok(tera)
+}
+
+/// Call OpenAI Completion via Sync endpoint
+fn openai_completion(args: &HashMap<String, Value>) -> Result<Value, tera::Error> {
+    let tokens = args
+        .get("tokens")
+        .expect("No token count given")
+        .as_u64()
+        .unwrap();
+
+    // build up prompt array
+    let mut prompt_array = Vec::<String>::with_capacity(64);
+
+    if let Some(prompts) = args.get("prompts") {
+        for prompt in prompts.as_array().unwrap().iter() {
+            prompt_array.push(prompt.as_str().unwrap().to_owned());
+        }
+    } else if let Some(prompt) = args.get("prompt") {
+        prompt_array.push(prompt.as_str().unwrap().to_owned());
+    } else {
+        panic!("No prompt provided");
+    };
+
+    debug!("Prompts: {:#?}", prompt_array);
+
+    let completion_args = CompletionArgs::builder()
+        .model("text-curie-001")
+        .max_tokens(tokens)
+        .temperature(0.7)
+        .prompt(prompt_array)
+        .build()?;
+
+    let api_token = std::env::var("OPENAI_API_KEY").expect("No openai api key found");
+    let client = Client::new(&api_token);
+
+    let completion = client
+        .complete_prompt_sync(completion_args)
+        .unwrap();
+
+    trace!("Completion: {:#?}", completion);
+
+    Ok(completion.to_string().trim().into())
 }
 
 fn create_topic_directory(output_path: &Path, topic: &str) -> PathBuf {

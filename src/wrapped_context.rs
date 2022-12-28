@@ -1,4 +1,4 @@
-use log::{debug, trace, warn};
+use log::{trace, warn};
 use serde_json::{self};
 use std::{fmt::Debug, fs, path::Path, path::PathBuf};
 use tera::Context;
@@ -33,7 +33,6 @@ impl WrappedContext {
     }
 
     pub fn append_json(&mut self, str: &str) {
-        debug!("Appending json");
         let json = str.parse::<serde_json::Value>().expect("JSON parsing");
         let object = json.as_object().expect("JSON as object");
 

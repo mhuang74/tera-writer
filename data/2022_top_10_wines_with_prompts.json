@@ -1,32 +1,52 @@
 {
-	"topics" : [
-		"Schrader Cellars Double Diamond Oakville Cabernet Sauvignon from Napa Valley",
-		"Fattoria dei Barbi Brunello di Montalcino Riserva DOCG from Tuscany",
-		"HDV Hyde de Villaine Hyde Vineyard Chardonnay from Carneros",
-		"Chateau Talbot from Saint-Julien",
-		"Marchesi Antinori Tignanello Toscana IGT from Tuscany",
-		"Robert Mondavi Winery The Estates Cabernet Sauvignon from Oakville",
-		"Chateau de Beaucastel Chateauneuf-du-Pape from Rhone",
-		"Fattoria Le Pupille 'Saffredi' Maremma Toscana from Tuscany",
-		"Quilceda Creek Cabernet Sauvignon from Columbia Valley",
-		"Louis Roederer Cristal Millesime Brut from Champagne"
+	"contexts" : [
+        {
+            "wine_name": "Schrader Cellars Double Diamond Oakville Cabernet Sauvignon from Napa Valley"
+        },
+        {
+            "wine_name": "Fattoria dei Barbi Brunello di Montalcino Riserva DOCG from Tuscany"
+        },
+        {
+            "wine_name": "HDV Hyde de Villaine Hyde Vineyard Chardonnay from Carneros"
+        },
+        {
+            "wine_name": "Chateau Talbot from Saint-Julien"
+        },
+        {
+            "wine_name": "Marchesi Antinori Tignanello Toscana IGT from Tuscany"
+        },
+        {
+            "wine_name": "Robert Mondavi Winery The Estates Cabernet Sauvignon from Oakville"
+        },
+        {
+            "wine_name": "Chateau de Beaucastel Chateauneuf-du-Pape from Rhone"
+        },
+        {
+            "wine_name": "Fattoria Le Pupille 'Saffredi' Maremma Toscana from Tuscany"
+        },
+        {
+            "wine_name": "Quilceda Creek Cabernet Sauvignon from Columbia Valley"
+        },
+        {
+            "wine_name": "Louis Roederer Cristal Millesime Brut from Champagne"
+        }
 	],
-    "prompts" : {
-        "description": {
+    "prompt_template_map" : {
+        "wine_description": {
             "tokens": 50,
-            "prompt": "Write a one sentence description about: {}"
+            "prompt": "Write a one sentence description about: {{wine_name}}"
         },
         "wine_popularity": {
             "tokens": 300,
-            "prompt": "Write about what makes this wine so popular: {}"
+            "prompt": "Write about what makes this wine so popular: {{wine_name}}"
         },
         "wine_history": {
             "tokens": 300,
-            "prompt": "Write about the history of this wine: {}"
+            "prompt": "Write about the history of this wine: {{wine_name}}"
         },
         "wine_pairing": {
             "tokens": 300,
-            "prompt": "Write about foods that go well with: {}"
+            "prompt": "Write about foods that go well with: {{wine_name}}"
         }
     }
 }
