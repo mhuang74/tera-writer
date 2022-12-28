@@ -11,7 +11,7 @@ use log::{debug, info, trace};
 use openai_api::{api::CompletionArgs, Client};
 use opts::*;
 use regex::Regex;
-use serde_json::{Map, Value};
+use serde_json::{json, Map, Value};
 use std::{
     collections::HashMap,
     fs::File,
@@ -64,16 +64,18 @@ fn main() -> Result<()> {
         let rate_limit = RateLimit::new(60, Duration::from_secs(60));
         let mut user_state = GcraState::default();
 
+        let directory_key = &opts.directory_key.unwrap();
+
         let mut rendered: String;
 
         for (idx, context) in contexts.iter().enumerate() {
-            let topic = context
-                .get("topic")
-                .expect("Missing 'topic' element")
-                .as_str()
-                .unwrap();
+            // let topic = context
+            //     .get("topic")
+            //     .expect("Missing 'topic' element")
+            //     .as_str()
+            //     .unwrap();
 
-            debug!("Processing topic[{}]: {}", idx, topic);
+            trace!("Processing context[{}]: {:#?}", idx, context);
 
             let tera_context: tera::Context = Context::from_value(context.to_owned())?;
             trace!("Tera context[{}]: {:#?}", idx, tera_context);
@@ -87,7 +89,8 @@ fn main() -> Result<()> {
             rendered = tera.render_str(&template_string, &tera_context).unwrap();
             trace!("Rendered: {}", rendered);
 
-            let mut my_path = create_topic_directory(&output_path, topic);
+            let output_description = context.get(directory_key).unwrap().as_str().unwrap();
+            let mut my_path = create_output_directory(&output_path, output_description);
             my_path.push("index.md");
             trace!("Saving to {}", my_path.display());
 
@@ -104,7 +107,7 @@ fn main() -> Result<()> {
         if let Some(prompt_template_map) = input_context.get("prompt_template_map") {
             // prepare output context and original context copied
             let mut output_context_list = Vec::<Map<String, Value>>::with_capacity(contexts.len());
-            for (idx, context) in contexts.iter().enumerate() {
+            for context in contexts {
                 let mut output_context_map = Map::<String, Value>::new();
                 output_context_map.append(&mut context.as_object().unwrap().clone());
                 output_context_list.push(output_context_map);
@@ -151,7 +154,7 @@ fn main() -> Result<()> {
 
                 trace!("Completion[{}]: {:#?}", key, completion);
 
-                for (idx, context) in contexts.iter().enumerate() {
+                for idx in 0..contexts.len() {
                     let completion_str = completion.choices[idx].text.trim();
                     let output_context_map = output_context_list.get_mut(idx).unwrap();
                     output_context_map.insert(key.to_owned(), completion_str.to_owned().into());
@@ -159,6 +162,24 @@ fn main() -> Result<()> {
             }
 
             debug!("Output context: {:#?}", output_context_list);
+
+            // TODO: create output JSON and write to file
+
+            let mut output_filename: PathBuf = opts.context.clone();
+            output_filename.set_extension("json.content");
+            info!("Writing to output file: {:#?}", output_filename);
+            let mut output_file =
+                File::create(output_filename).expect("Unable to create output file");
+            let map_objs: Vec<Value> = output_context_list
+                .iter()
+                .map(|m| Value::Object(m.to_owned()))
+                .collect();
+            let output_json = json!({ "contexts": Value::Array(map_objs) });
+            let output_json_pretty =
+                serde_json::to_string_pretty(&output_json).expect("prettify output json");
+            output_file
+                .write_all(output_json_pretty.as_bytes())
+                .expect("Unable to write to output file");
         } else {
             info!("No prompts found. Nothing to do.");
         }
@@ -235,11 +256,11 @@ fn openai_completion(args: &HashMap<String, Value>) -> Result<Value, tera::Error
     Ok(completion.to_string().trim().into())
 }
 
-fn create_topic_directory(output_path: &Path, topic: &str) -> PathBuf {
+fn create_output_directory(output_path: &Path, output_description: &str) -> PathBuf {
     let re_non_alpha: Regex = Regex::new(r"[[:^alpha:]]").unwrap();
     let re_spaces: Regex = Regex::new(r"[ ]+").unwrap();
 
-    let stripped = re_non_alpha.replace_all(topic, " ");
+    let stripped = re_non_alpha.replace_all(output_description, " ");
     let directory = re_spaces.replace_all(stripped.as_ref(), "_");
 
     let mut my_path: PathBuf = PathBuf::from(output_path);

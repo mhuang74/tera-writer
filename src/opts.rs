@@ -10,10 +10,14 @@ pub struct Opts {
     pub context: PathBuf,
 
     /// Tera template to inject JSON data into.
-    #[arg(short, long)]
+    #[arg(short, long, requires = "directory_key")]
     pub template: Option<PathBuf>,
 
     /// Output path [Default: current directory]
     #[arg(short, long)]
     pub output_path: Option<PathBuf>,
+
+    /// create output directories based on value of this context key
+    #[arg(short, long)]
+    pub directory_key: Option<String>,
 }
