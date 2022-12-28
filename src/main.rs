@@ -11,7 +11,7 @@ use log::{debug, info, trace};
 use openai_api::{api::CompletionArgs, Client};
 use opts::*;
 use regex::Regex;
-use serde_json::{Value, Map};
+use serde_json::{Map, Value};
 use std::{
     collections::HashMap,
     fs::File,
@@ -102,9 +102,8 @@ fn main() -> Result<()> {
 
         // if there are prompt templates, expand them via Tera then call OpenAI Completion API
         if let Some(prompt_template_map) = input_context.get("prompt_template_map") {
-
             // prepare output context and original context copied
-            let mut output_context_list = Vec::<Map<String,Value>>::with_capacity(contexts.len());
+            let mut output_context_list = Vec::<Map<String, Value>>::with_capacity(contexts.len());
             for (idx, context) in contexts.iter().enumerate() {
                 let mut output_context_map = Map::<String, Value>::new();
                 output_context_map.append(&mut context.as_object().unwrap().clone());
@@ -144,16 +143,13 @@ fn main() -> Result<()> {
                     .unwrap();
 
                 // call Completion API
-            
+
                 let api_token = std::env::var("OPENAI_API_KEY").expect("No openai api key found");
                 let client = Client::new(&api_token);
-            
-                let completion = client
-                    .complete_prompt_sync(completion_args)
-                    .unwrap();
-            
-                trace!("Completion[{}]: {:#?}", key, completion);
 
+                let completion = client.complete_prompt_sync(completion_args).unwrap();
+
+                trace!("Completion[{}]: {:#?}", key, completion);
 
                 for (idx, context) in contexts.iter().enumerate() {
                     let completion_str = completion.choices[idx].text.trim();
@@ -163,9 +159,6 @@ fn main() -> Result<()> {
             }
 
             debug!("Output context: {:#?}", output_context_list);
-
-            
-
         } else {
             info!("No prompts found. Nothing to do.");
         }
@@ -235,9 +228,7 @@ fn openai_completion(args: &HashMap<String, Value>) -> Result<Value, tera::Error
     let api_token = std::env::var("OPENAI_API_KEY").expect("No openai api key found");
     let client = Client::new(&api_token);
 
-    let completion = client
-        .complete_prompt_sync(completion_args)
-        .unwrap();
+    let completion = client.complete_prompt_sync(completion_args).unwrap();
 
     trace!("Completion: {:#?}", completion);
 
