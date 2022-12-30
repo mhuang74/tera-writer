@@ -257,11 +257,13 @@ fn openai_completion(args: &HashMap<String, Value>) -> Result<Value, tera::Error
 }
 
 fn create_output_directory(output_path: &Path, output_description: &str) -> PathBuf {
-    let re_non_alpha: Regex = Regex::new(r"[[:^alpha:]]").unwrap();
+    let re_non_alpha: Regex = Regex::new(r"\P{alpha}").unwrap();
     let re_spaces: Regex = Regex::new(r"[ ]+").unwrap();
 
     let stripped = re_non_alpha.replace_all(output_description, " ");
     let directory = re_spaces.replace_all(stripped.as_ref(), "_");
+
+    trace!("Output Dir: '{}' -> '{}' -> '{}'", output_description, stripped, directory);
 
     let mut my_path: PathBuf = PathBuf::from(output_path);
     my_path.push(directory.as_ref());
