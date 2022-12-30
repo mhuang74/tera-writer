@@ -2,7 +2,6 @@
 title: {{ topic }}
 description: {{ openai_completion(tokens=50, prompt="Write a one sentence description about: " ~ topic) }}
 date: 2022-01-01
-
 extra:
   image: image.webp
 taxonomies:
