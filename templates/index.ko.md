@@ -8,7 +8,7 @@ taxonomies:
   tags:
 ---
 
-##### { wine_name }} 가 인기 있는 이유
+##### {{ wine_name }} 가 인기 있는 이유
 
 {{ wine_popularity }}
 
