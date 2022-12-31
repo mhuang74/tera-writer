@@ -1,0 +1,289 @@
+{
+	"contexts" : [
+      {
+        "wine_name": "Chateau Beau-Sejour Becot from Saint-Emilion Grand Cru"
+      },
+      {
+        "wine_name": "Podere Grattamacco Bolgheri Superiore from Bolgheri"
+      },
+      {
+        "wine_name": "Greywacke Sauvignon Blanc from Marlborough"
+      },
+      {
+        "wine_name": "Philip Togni Vineyard Cabernet Sauvignon from Napa Valley"
+      },
+      {
+        "wine_name": "Roserock Chardonnay from Eola-Amity Hills"
+      },
+      {
+        "wine_name": "McPrice Myers Beautiful Earth from Paso Robles"
+      },
+      {
+        "wine_name": "Bodegas Caro 'Amancaya' Gran Reserva Malbec - Cabernet Sauvignon from Mendoza"
+      },
+      {
+        "wine_name": "Giant Steps Pinot Noir from Yarra Valley"
+      },
+      {
+        "wine_name": "Schramsberg Blanc de Blancs from North Coast"
+      },
+      {
+        "wine_name": "Burn Cottage Pinot Noir from Central Otago"
+      },
+      {
+        "wine_name": "Montes Alpha Syrah from Colchagua Valley"
+      },
+      {
+        "wine_name": "Tenuta di Capraia Chianti Classico Riserva DOCG from Tuscany"
+      },
+      {
+        "wine_name": "Finca Decero Remolinos Vineyard Malbec from Agrelo"
+      },
+      {
+        "wine_name": "San Felice Chianti Classico DOCG from Tuscany"
+      },
+      {
+        "wine_name": "Hanzell Vineyards Pinot Noir from Sonoma Valley"
+      },
+      {
+        "wine_name": "First Drop Mother's Milk Shiraz from Barossa"
+      },
+      {
+        "wine_name": "McBride Sisters Sauvignon Blanc from Marlborough"
+      },
+      {
+        "wine_name": "Cattleya 'Alma de Cattleya' Sauvignon Blanc from Sonoma County"
+      },
+      {
+        "wine_name": "Raventos I Blanc 'Blanc de Blancs' Espumoso Conca del Riu de Arnoia from Catalonia"
+      },
+      {
+        "wine_name": "DeLille Cellars D2 from Columbia Valley"
+      },
+      {
+        "wine_name": "Boscarelli Vino Nobile di Montepulciano Riserva DOCG from Tuscany"
+      },
+      {
+        "wine_name": "Nalle Zinfandel from Dry Creek Valley"
+      },
+      {
+        "wine_name": "Soter Vineyards 'Estates' Pinot Noir from Willamette Valley"
+      },
+      {
+        "wine_name": "Dr. H. Thanisch Muller-Burggraef Bernkasteller Badstube Riesling Kabinett from Mosel"
+      },
+      {
+        "wine_name": "Bucklin Old Hill Ranch Ancient Field Blend from Sonoma Valley"
+      },
+      {
+        "wine_name": "Hickinbotham Brooks Road Shiraz from McLaren Vale"
+      },
+      {
+        "wine_name": "Domaine Jean-Louis Chave Saint-Joseph from Rhone"
+      },
+      {
+        "wine_name": "Alloro Vineyard Estate Pinot Noir from Chehalem Mountains"
+      },
+      {
+        "wine_name": "Horsepower Vineyards 'The Tribe Vineyard' Syrah from Walla Walla Valley"
+      },
+      {
+        "wine_name": "Produttori del Barbaresco 'Muncagota' from Barbaresco Riserva DOCG"
+      },
+      {
+        "wine_name": "J Bookwalter Winery 'Readers' Cabernet Sauvignon from Columbia Valley"
+      },
+      {
+        "wine_name": "Ferraton Pere & Fils Crozes-Hermitage La Matiniere from Rhone"
+      },
+      {
+        "wine_name": "Familia Zuccardi 'Concreto' Malbec from Altamira"
+      },
+      {
+        "wine_name": "Livio Felluga Pinot Grigio Colli Orientali del Friuli from Friuli-Venezia Giulia"
+      },
+      {
+        "wine_name": "Hermann J. Wiemer HJW Vineyard Riesling from Finger Lakes"
+      },
+      {
+        "wine_name": "Domaine La Bouissiere Gigondas from Rhone"
+      },
+      {
+        "wine_name": "Bodegas Ego Goru Verde - Goru Organic from Jumilla"
+      },
+      {
+        "wine_name": "August Kesseler 'R' Riesling Kabinett from Rheingau"
+      },
+      {
+        "wine_name": "D'Angelo Aglianico del Vulture from Basilicata"
+      },
+      {
+        "wine_name": "Bodega Numanthia from Toro"
+      },
+      {
+        "wine_name": "Altocedro Malbec Reserva from La Consulta"
+      },
+      {
+        "wine_name": "P+S Prats & Symington Chryseia from Douro"
+      },
+      {
+        "wine_name": "Bodegas Muga 'Prado Enea' Gran Reserva from Rioja DOCa"
+      },
+      {
+        "wine_name": "School House Vineyard Pinot Noir from Spring Mountain District"
+      },
+      {
+        "wine_name": "Tenuta Col d'Orcia Brunello di Montalcino DOCG from Tuscany"
+      },
+      {
+        "wine_name": "A.A. Badenhorst Secateurs Riviera from Swartland"
+      },
+      {
+        "wine_name": "Bodegas Resalte de Penafiel 'de Restia' Crianza Selected Harvest from Ribera del Duero"
+      },
+      {
+        "wine_name": "Suavia Soave Classico from Veneto"
+      },
+      {
+        "wine_name": "Two Hands Wines Sexy Beast Cabernet Sauvignon from McLaren Vale"
+      },
+      {
+        "wine_name": "Casas del Bosque Gran Reserva Carmenere from Cachapoal Valley"
+      },
+      {
+        "wine_name": "Damilano Barbera d'Asti DOCG from Piedmont"
+      },
+      {
+        "wine_name": "Yalumba Samuel's Collection Syrah from Barossa"
+      },
+      {
+        "wine_name": "Masseria Li Veli 'Askos' Susumaniello Salento IGT from Puglia"
+      },
+      {
+        "wine_name": "Domaine Jaume Vinsobres Altitude 420 from Rhone"
+      },
+      {
+        "wine_name": "Joseph Drouhin Pouilly-Fuisse from Maconnais"
+      },
+      {
+        "wine_name": "Quinta do Vesuvio Single Quinta Vintage Port"
+      },
+      {
+        "wine_name": "Chateau La Gaffeliere from Saint-Emilion"
+      },
+      {
+        "wine_name": "Etude Cabernet Sauvignon from Napa Valley"
+      },
+      {
+        "wine_name": "Luke Merlot from Wahluke Slope"
+      },
+      {
+        "wine_name": "Bodegas Avancia Godello from Valdeorras"
+      },
+      {
+        "wine_name": "Domaine du Vieux Telegraphe Chateauneuf-du-Pape La Crau from Rhone"
+      },
+      {
+        "wine_name": "Charles Woodson's 'Intercept' Chardonnay from Paso Robles"
+      },
+      {
+        "wine_name": "Pecchenino Botti Langhe Nebbiolo from Piedmont"
+      },
+      {
+        "wine_name": "Bodegas Terras Gauda O Rosal from Rias Baixas"
+      },
+      {
+        "wine_name": "El Molino Chardonnay from Rutherford"
+      },
+      {
+        "wine_name": "Mazzei Zisola Noto Rosso from Sicily"
+      },
+      {
+        "wine_name": "Clos Cibonne Cotes de Provence Cuvee Tradition Rose"
+      },
+      {
+        "wine_name": "Fontanafredda Serralunga d'Alba from Barolo DOCG"
+      },
+      {
+        "wine_name": "Dakota Shy Cabernet Sauvignon from Napa Valley"
+      },
+      {
+        "wine_name": "San Salvatore Falanghina Campania IGT"
+      },
+      {
+        "wine_name": "Domaine Gerard Fiou Sancerre Terroir Silex from Loire"
+      },
+      {
+        "wine_name": "Astrolabe 'Valleys' Awatere Valley Sauvignon Blanc from Marlborough"
+      },
+      {
+        "wine_name": "Domaine Huet Vouvray 'Le Haut Lieu' Sec from Loire"
+      },
+      {
+        "wine_name": "Mastroberardino Radici from Taurasi DOCG"
+      },
+      {
+        "wine_name": "Raen Royal St. Robert Cuvee Pinot Noir from Sonoma Coast"
+      },
+      {
+        "wine_name": "Gaston Chiquet Premier Cru Brut Tradition from Champagne"
+      },
+      {
+        "wine_name": "Arista UV Lucky Well Vineyard Pinot Noir from Russian River Valley"
+      },
+      {
+        "wine_name": "Vine Hill Ranch 'VHR' Cabernet Sauvignon from Napa Valley"
+      },
+      {
+        "wine_name": "Companion Wine Co. Oliver's Vineyard 'Sunny B' from Edna Valley"
+      },
+      {
+        "wine_name": "Vina Almaviva EPU from Puente Alto"
+      },
+      {
+        "wine_name": "Calera Jensen Vineyard Pinot Noir from Mount Harlan"
+      },
+      {
+        "wine_name": "Tzora Vineyards 'Judean Hills' Blanc from Judean Hills"
+      },
+      {
+        "wine_name": "Rivers-Marie Silver Eagle Vineyard Pinot Noir from Sonoma Coast"
+      },
+      {
+        "wine_name": "Domaine Alain Voge Cornas Les Vieilles Vignes from Rhone"
+      },
+      {
+        "wine_name": "Elvio Cogno Barolo Vigna Elena from Barolo DOCG"
+      },
+      {
+        "wine_name": "Domaine Laroche Les Fourchaume Vieilles Vignes from Chablis Premier Cru"
+      },
+      {
+        "wine_name": "Ferren Chardonnay from Sonoma Coast"
+      },
+      {
+        "wine_name": "Antoine Graillot & Raul Perez 'Encinas' Mencia from Bierzo"
+      },
+      {
+        "wine_name": "DVO from Napa Valley"
+      }
+	],
+    "prompt_template_map" : {
+        "wine_description": {
+            "tokens": 50,
+            "prompt": "Write a one sentence description about: {{wine_name}}"
+        },
+        "wine_popularity": {
+            "tokens": 300,
+            "prompt": "Write about what makes this wine so popular: {{wine_name}}"
+        },
+        "wine_history": {
+            "tokens": 300,
+            "prompt": "Write about the history of this wine: {{wine_name}}"
+        },
+        "wine_pairing": {
+            "tokens": 300,
+            "prompt": "Write about foods that go well with: {{wine_name}}"
+        }
+    }
+}
