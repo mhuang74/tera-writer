@@ -268,7 +268,7 @@
         "wine_name": "DVO from Napa Valley"
       }
 	],
-    "prompt_template_map" : {
+    "prompt_templates" : {
         "wine_description": {
             "tokens": 50,
             "prompt": "Write a one sentence description about: {{wine_name}}"

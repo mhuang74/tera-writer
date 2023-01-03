@@ -31,7 +31,7 @@
             "wine_name": "Louis Roederer Cristal Millesime Brut from Champagne"
         }
 	],
-    "prompt_template_map" : {
+    "prompt_templates" : {
         "wine_description": {
             "tokens": 50,
             "prompt": "Write a one sentence description about: {{wine_name}}"
