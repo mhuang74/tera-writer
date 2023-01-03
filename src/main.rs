@@ -101,8 +101,12 @@ fn main() -> Result<()> {
 
             let output_description = context.get(directory_key).unwrap().as_str().unwrap();
             let mut my_path = create_output_directory(&output_path, output_description);
-            my_path.push("index.md");
-            trace!("Saving to {}", my_path.display());
+
+            // use template filename as output filename
+            let my_filename = Path::new(template_path.file_name().unwrap());
+            my_path.push(my_filename);
+            
+            trace!("Writing output to {}", my_path.display());
 
             let mut file = File::create(my_path).expect("Failed opening output file");
             file.write_all(rendered.as_bytes())
@@ -128,7 +132,7 @@ fn main() -> Result<()> {
             let mut user_state = GcraState::default();
 
             for (key, prompt_template) in prompt_template_map.as_object().unwrap() {
-                trace!("Prompt Template[{:#?}]: {:#?}", key, prompt_template);
+                debug!("Prompt Template[{:#?}]: {:#?}", key, prompt_template);
 
                 let prompt_str = prompt_template.get("prompt").unwrap().as_str().unwrap();
                 trace!("Prompt[{}]: {}", key, prompt_str);
@@ -164,13 +168,13 @@ fn main() -> Result<()> {
                 }
             }
 
-            debug!("Output context: {:#?}", output_context_list);
+            trace!("Output context: {:#?}", output_context_list);
 
             // TODO: create output JSON and write to file
 
             let mut output_filename: PathBuf = opts.context.clone();
-            output_filename.set_extension("json.content");
-            info!("Writing to output file: {:#?}", output_filename);
+            output_filename.set_extension("content.json");
+            info!("Writing output to: {:#?}", output_filename);
             let mut output_file =
                 File::create(output_filename).expect("Unable to create output file");
             let map_objs: Vec<Value> = output_context_list
