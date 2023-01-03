@@ -11,14 +11,14 @@ version = "0.1.0"
 anyhow = "1"
 clap = { version = "4", features = ["derive", "env", "unicode", "cargo"] }
 env_logger = "0.9"
-log = "0.4"
 gcra = { version = "=0.3.2", features = [] }
+lazy_static = "1.4.0"
+log = "0.4"
+openai-api = { version = "0.1.5", features = ['sync'], path="../openai-api-rust" }
 regex = "1"
-tera = "1.17"
 serde = "1.0"
 serde_json = { version = "1.0", optional = false }
-openai-api = { version = "0.1.5", features = ['sync'], path="../openai-api-rust" }
-lazy_static = "1.4.0"
+tera = "1.17"
 
 [dev-dependencies]
 assert_cmd = "2.0"

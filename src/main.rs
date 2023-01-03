@@ -7,6 +7,7 @@ use anyhow::Result;
 use clap::{crate_name, crate_version, Parser};
 use env_logger::Env;
 use gcra::{GcraState, RateLimit};
+use lazy_static::lazy_static;
 use log::{debug, info, trace};
 use openai_api::{api::CompletionArgs, Client};
 use opts::*;
@@ -23,14 +24,12 @@ use std::{
     time::Duration,
 };
 use tera::{Context, Tera};
-use lazy_static::lazy_static;
 
 lazy_static! {
     // global Singleton for single-thread use
     static ref OPENAI_CLIENT: openai_api::Client = {
         let api_token = std::env::var("OPENAI_API_KEY").expect("No openai api key found");
-        let client = Client::new(&api_token);
-        client
+        Client::new(&api_token)
     };
 }
 
@@ -105,7 +104,7 @@ fn main() -> Result<()> {
             // use template filename as output filename
             let my_filename = Path::new(template_path.file_name().unwrap());
             my_path.push(my_filename);
-            
+
             trace!("Writing output to {}", my_path.display());
 
             let mut file = File::create(my_path).expect("Failed opening output file");
@@ -160,7 +159,8 @@ fn main() -> Result<()> {
                 }
 
                 // do actual openai api call in batches
-                let completions = openai_completion_batch(prompts, tokens).expect("Failed to do Completion via OpenAI");
+                let completions = openai_completion_batch(prompts, tokens)
+                    .expect("Failed to do Completion via OpenAI");
 
                 for (idx, completion_str) in completions.iter().enumerate() {
                     let output_context_map = output_context_list.get_mut(idx).unwrap();
@@ -199,20 +199,19 @@ const OPANAI_BATCH_SIZE: usize = 20;
 
 /// call openai completion sync api in batches of 20 prompts
 fn openai_completion_batch(prompts: Vec<String>, tokens: u64) -> Result<Vec<String>> {
-
     let mut results: Vec<String> = Vec::<String>::with_capacity(prompts.len());
 
     for (batch_num, batch_prompts) in prompts.chunks(OPANAI_BATCH_SIZE).enumerate() {
         // construct CompletionArg with all prompts for current context
         let completion_args = CompletionArgs::builder()
-                                                .model("text-curie-001")
-                                                .max_tokens(tokens)
-                                                .temperature(0.7)
-                                                .prompt(batch_prompts)
-                                                .build()
-                                                .expect("Invalid Completion Prompt");
+            .model("text-curie-001")
+            .max_tokens(tokens)
+            .temperature(0.7)
+            .prompt(batch_prompts)
+            .build()
+            .expect("Invalid Completion Prompt");
 
-                                                   // call Completion API
+        // call Completion API
         let completion = OPENAI_CLIENT.complete_prompt_sync(completion_args)?;
         trace!("Completion[{}]: {:#?}", batch_num, completion);
 
@@ -276,8 +275,6 @@ fn openai_completion_tera_function(args: &HashMap<String, Value>) -> Result<Valu
         .prompt(vec![prompt.to_owned()])
         .build()?;
 
-
-
     let completion = OPENAI_CLIENT.complete_prompt_sync(completion_args).unwrap();
 
     trace!("Completion: {:#?}", completion);
@@ -292,7 +289,12 @@ fn create_output_directory(output_path: &Path, output_description: &str) -> Path
     let stripped = re_non_alpha.replace_all(output_description, " ");
     let directory = re_spaces.replace_all(stripped.as_ref(), "_");
 
-    trace!("Output Dir: '{}' -> '{}' -> '{}'", output_description, stripped, directory);
+    trace!(
+        "Output Dir: '{}' -> '{}' -> '{}'",
+        output_description,
+        stripped,
+        directory
+    );
 
     let mut my_path: PathBuf = PathBuf::from(output_path);
     my_path.push(directory.as_ref());
