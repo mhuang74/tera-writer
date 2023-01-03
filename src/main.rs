@@ -117,7 +117,7 @@ fn main() -> Result<()> {
         info!("Expanding JSON file: {:#?}", &opts.context);
 
         // if there are prompt templates, expand them via Tera then call OpenAI Completion API
-        if let Some(prompt_template_map) = input_context.get("prompt_template_map") {
+        if let Some(prompt_template_map) = input_context.get("prompt_templates") {
             // prepare output context with original context copied
             let mut output_context_list = Vec::<Map<String, Value>>::with_capacity(contexts.len());
             for context in contexts {
@@ -188,7 +188,7 @@ fn main() -> Result<()> {
                 .write_all(output_json_pretty.as_bytes())
                 .expect("Unable to write to output file");
         } else {
-            info!("Missing 'prompt_template_map' in JSON. Nothing to do.");
+            info!("Missing 'prompt_templates' in context file. Nothing to do.");
         }
     };
 
