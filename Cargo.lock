@@ -2556,6 +2556,7 @@ dependencies = [
  "clap",
  "env_logger",
  "gcra",
+ "lazy_static",
  "log",
  "openai-api",
  "predicates",

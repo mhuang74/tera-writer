@@ -23,6 +23,16 @@ use std::{
     time::Duration,
 };
 use tera::{Context, Tera};
+use lazy_static::lazy_static;
+
+lazy_static! {
+    // global Singleton for single-thread use
+    static ref OPENAI_CLIENT: openai_api::Client = {
+        let api_token = std::env::var("OPENAI_API_KEY").expect("No openai api key found");
+        let client = Client::new(&api_token);
+        client
+    };
+}
 
 fn main() -> Result<()> {
     env_logger::Builder::from_env(Env::default().default_filter_or("none")).init();
@@ -105,13 +115,17 @@ fn main() -> Result<()> {
 
         // if there are prompt templates, expand them via Tera then call OpenAI Completion API
         if let Some(prompt_template_map) = input_context.get("prompt_template_map") {
-            // prepare output context and original context copied
+            // prepare output context with original context copied
             let mut output_context_list = Vec::<Map<String, Value>>::with_capacity(contexts.len());
             for context in contexts {
                 let mut output_context_map = Map::<String, Value>::new();
                 output_context_map.append(&mut context.as_object().unwrap().clone());
                 output_context_list.push(output_context_map);
             }
+
+            // setup rate limit
+            let rate_limit = RateLimit::new(60, Duration::from_secs(60));
+            let mut user_state = GcraState::default();
 
             for (key, prompt_template) in prompt_template_map.as_object().unwrap() {
                 trace!("Prompt Template[{:#?}]: {:#?}", key, prompt_template);
@@ -135,27 +149,16 @@ fn main() -> Result<()> {
                     prompts.push(final_prompt);
                 }
 
-                // construct CompletionArg with all prompts for current context
+                // throttle api call
+                while user_state.check_and_modify(&rate_limit, 1).is_err() {
+                    trace!("Rate limited..sleeping");
+                    thread::sleep(Duration::from_millis(1000));
+                }
 
-                let completion_args = CompletionArgs::builder()
-                    .model("text-curie-001")
-                    .max_tokens(tokens)
-                    .temperature(0.7)
-                    .prompt(prompts)
-                    .build()
-                    .unwrap();
+                // do actual openai api call in batches
+                let completions = openai_completion_batch(prompts, tokens).expect("Failed to do Completion via OpenAI");
 
-                // call Completion API
-
-                let api_token = std::env::var("OPENAI_API_KEY").expect("No openai api key found");
-                let client = Client::new(&api_token);
-
-                let completion = client.complete_prompt_sync(completion_args).unwrap();
-
-                trace!("Completion[{}]: {:#?}", key, completion);
-
-                for idx in 0..contexts.len() {
-                    let completion_str = completion.choices[idx].text.trim();
+                for (idx, completion_str) in completions.iter().enumerate() {
                     let output_context_map = output_context_list.get_mut(idx).unwrap();
                     output_context_map.insert(key.to_owned(), completion_str.to_owned().into());
                 }
@@ -181,11 +184,41 @@ fn main() -> Result<()> {
                 .write_all(output_json_pretty.as_bytes())
                 .expect("Unable to write to output file");
         } else {
-            info!("No prompts found. Nothing to do.");
+            info!("Missing 'prompt_template_map' in JSON. Nothing to do.");
         }
     };
 
     Ok(())
+}
+
+const OPANAI_BATCH_SIZE: usize = 20;
+
+/// call openai completion sync api in batches of 20 prompts
+fn openai_completion_batch(prompts: Vec<String>, tokens: u64) -> Result<Vec<String>> {
+
+    let mut results: Vec<String> = Vec::<String>::with_capacity(prompts.len());
+
+    for (batch_num, batch_prompts) in prompts.chunks(OPANAI_BATCH_SIZE).enumerate() {
+        // construct CompletionArg with all prompts for current context
+        let completion_args = CompletionArgs::builder()
+                                                .model("text-curie-001")
+                                                .max_tokens(tokens)
+                                                .temperature(0.7)
+                                                .prompt(batch_prompts)
+                                                .build()
+                                                .expect("Invalid Completion Prompt");
+
+                                                   // call Completion API
+        let completion = OPENAI_CLIENT.complete_prompt_sync(completion_args)?;
+        trace!("Completion[{}]: {:#?}", batch_num, completion);
+
+        for idx in 0..batch_prompts.len() {
+            let completion_str = completion.choices[idx].text.trim();
+            results.push(completion_str.to_owned());
+        }
+    }
+
+    Ok(results)
 }
 
 /// instantiate tera and register openai custom function
@@ -211,45 +244,37 @@ fn setup_tera(template_path: &Path) -> Result<Tera> {
     };
 
     // register custom function to call openai completion api
-    tera.register_function("openai_completion", openai_completion);
+    tera.register_function("openai_completion", openai_completion_tera_function);
 
     Ok(tera)
 }
 
 /// Call OpenAI Completion via Sync endpoint
-fn openai_completion(args: &HashMap<String, Value>) -> Result<Value, tera::Error> {
+fn openai_completion_tera_function(args: &HashMap<String, Value>) -> Result<Value, tera::Error> {
     let tokens = args
         .get("tokens")
         .expect("No token count given")
         .as_u64()
         .unwrap();
 
-    // build up prompt array
-    let mut prompt_array = Vec::<String>::with_capacity(64);
+    let prompt = args
+        .get("prompt")
+        .expect("No prompt given")
+        .as_str()
+        .unwrap();
 
-    if let Some(prompts) = args.get("prompts") {
-        for prompt in prompts.as_array().unwrap().iter() {
-            prompt_array.push(prompt.as_str().unwrap().to_owned());
-        }
-    } else if let Some(prompt) = args.get("prompt") {
-        prompt_array.push(prompt.as_str().unwrap().to_owned());
-    } else {
-        panic!("No prompt provided");
-    };
-
-    debug!("Prompts: {:#?}", prompt_array);
+    trace!("Prompt: {}", prompt);
 
     let completion_args = CompletionArgs::builder()
         .model("text-curie-001")
         .max_tokens(tokens)
         .temperature(0.7)
-        .prompt(prompt_array)
+        .prompt(vec![prompt.to_owned()])
         .build()?;
 
-    let api_token = std::env::var("OPENAI_API_KEY").expect("No openai api key found");
-    let client = Client::new(&api_token);
 
-    let completion = client.complete_prompt_sync(completion_args).unwrap();
+
+    let completion = OPENAI_CLIENT.complete_prompt_sync(completion_args).unwrap();
 
     trace!("Completion: {:#?}", completion);
 
