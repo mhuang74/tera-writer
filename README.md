@@ -28,29 +28,24 @@ Options:
   
 ```
 
-## Example Steps for generating contents for a Zola-powered Website in Korean
+## Example Steps for generating contents for a Zola-powered Blog
 
 1) Use context file with prompts to generate English contents
 ```
-$ RUST_LOG=teraw=info teraw data/2022_top_10_wines_with_prompts.json
+$ RUST_LOG=teraw=info teraw samples/context/2022_top_10_wines_with_prompts.json
 ```
 
 2) Manually review/edit contents & save it
 ```
-$ subl data/2022_top_10_wines_with_prompts.content.json
+$ subl samples/context/2022_top_10_wines_with_prompts.content.json
 ```
 
-3) Translate contents to Korean via [translate_json](https://github.com/yxor/translate-json)
+3) Generate content files with Zola directory convention
 ```
-$ python translate-json.py -f data/2022_top_10_wines_with_prompts.content.json -s en -l ko -o data
-```
-
-4) Generate Korean Markdown files
-```
-$ RUST_LOG=teraw=info teraw data/2022_top_10_wines_with_prompts.content.ko.json -t templates/korean/index.md --directory-key wine_name -o tmp
+$ RUST_LOG=teraw=info teraw samples/context/2022_top_10_wines_with_prompts.content.json -t samples/template/index.md --directory-key wine_name -o tmp
 ```
 
-## Example JSON context file with Prompts
+## Example JSON context file with Prompt Templates
 
 ```
 {
