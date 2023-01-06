@@ -12,7 +12,7 @@ use log::{debug, info, trace};
 use openai_api::{api::CompletionArgs, Client};
 use opts::*;
 use regex::Regex;
-use serde_json::{json, Map, Value};
+use serde_json::{json, Map, Value, Number};
 use std::{
     collections::HashMap,
     fs::File,
@@ -31,6 +31,10 @@ lazy_static! {
         let api_token = std::env::var("OPENAI_API_KEY").expect("No openai api key found");
         Client::new(&api_token)
     };
+
+    // completion defaults
+    static ref COMPLETION_MODEL_CURIE: Value = Value::String("text-curie-001".to_string());
+    static ref COMPLETION_TEMPERATURE_CREATIVE: Value = Value::Number(Number::from_f64(0.7f64).unwrap());
 }
 
 fn main() -> Result<()> {
@@ -133,6 +137,12 @@ fn main() -> Result<()> {
             for (key, prompt_template) in prompt_template_map.as_object().unwrap() {
                 debug!("Prompt Template[{:#?}]: {:#?}", key, prompt_template);
 
+                let model = prompt_template.get("model").unwrap_or(&COMPLETION_MODEL_CURIE).as_str().unwrap();
+                trace!("Model[{}]: {}", key, model);
+
+                let temperature = prompt_template.get("temperature").unwrap_or(&COMPLETION_TEMPERATURE_CREATIVE).as_f64().unwrap();
+                trace!("Temperature[{}]: {}", key, temperature);
+
                 let prompt_str = prompt_template.get("prompt").unwrap().as_str().unwrap();
                 trace!("Prompt[{}]: {}", key, prompt_str);
 
@@ -159,7 +169,7 @@ fn main() -> Result<()> {
                 }
 
                 // do actual openai api call in batches
-                let completions = openai_completion_batch(prompts, tokens)
+                let completions = openai_completion_batch(model, temperature, prompts, tokens)
                     .expect("Failed to do Completion via OpenAI");
 
                 for (idx, completion_str) in completions.iter().enumerate() {
@@ -198,15 +208,15 @@ fn main() -> Result<()> {
 const OPANAI_BATCH_SIZE: usize = 20;
 
 /// call openai completion sync api in batches of 20 prompts
-fn openai_completion_batch(prompts: Vec<String>, tokens: u64) -> Result<Vec<String>> {
+fn openai_completion_batch(model: &str, temperature: f64, prompts: Vec<String>, tokens: u64) -> Result<Vec<String>> {
     let mut results: Vec<String> = Vec::<String>::with_capacity(prompts.len());
 
     for (batch_num, batch_prompts) in prompts.chunks(OPANAI_BATCH_SIZE).enumerate() {
         // construct CompletionArg with all prompts for current context
         let completion_args = CompletionArgs::builder()
-            .model("text-curie-001")
+            .model(model)
             .max_tokens(tokens)
-            .temperature(0.7)
+            .temperature(temperature)
             .prompt(batch_prompts)
             .build()
             .expect("Invalid Completion Prompt");
