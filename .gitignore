@@ -1,5 +1,5 @@
 /target
 .env
 /tmp*
-/local/**/*
+/local
 /samples/**/*.content.json
