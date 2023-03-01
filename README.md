@@ -20,11 +20,18 @@ Arguments:
   <CONTEXT>  JSON file with topics and prompts for Completion API, or used as data source when Tera template is specified
 
 Options:
-  -t, --template <TEMPLATE>            Tera template to inject JSON data into
-  -o, --output-path <OUTPUT_PATH>      Output path [Default: current directory]
-  -d, --directory-key <DIRECTORY_KEY>  create output directories based on value of this context key
-  -h, --help                           Print help information
-  -V, --version                        Print version information
+  -t, --template <TEMPLATE>
+          Tera template to inject JSON data into
+  -o, --output-path <OUTPUT_PATH>
+          Output path [Default: current directory]
+      --category-subdirectory-key <CATEGORY_SUBDIRECTORY_KEY>
+          context key for output category subdirectory
+      --title-subdirectory-key <TITLE_SUBDIRECTORY_KEY>
+          context key for output title subdirectory
+  -h, --help
+          Print help information
+  -V, --version
+          Print version information
   
 ```
 
@@ -42,7 +49,7 @@ $ subl samples/context/2022_top_10_wines_with_prompts.content.json
 
 3) Generate content files with Zola directory convention
 ```
-$ RUST_LOG=teraw=info teraw samples/context/2022_top_10_wines_with_prompts.content.json -t samples/template/index.md --directory-key wine_name -o tmp
+$ RUST_LOG=teraw=info teraw samples/context/2022_top_10_wines_with_prompts.content.json -t samples/template/index.md --cat-key wine_style  --title-key wine_name -o tmp
 ```
 
 ## Example JSON context file with Prompt Templates
@@ -97,7 +104,13 @@ $ RUST_LOG=teraw=info teraw samples/context/2022_top_10_wines_with_prompts.conte
         "wine_pairing": {
             "tokens": 300,
             "prompt": "Write about foods that go well with: {{wine_name}}"
-        }
+        },
+        "wine_style": {
+            "model": "text-davinci-003",
+            "temperature": 0,
+            "tokens": 5,
+            "prompt": "Picking from this list of wine types: red wine, white wine, rose wine, sparkling wine, and dessert wine, which wine type does this wine belong to: {{wine_name}} ?"
+        },
     }
 }
 ```

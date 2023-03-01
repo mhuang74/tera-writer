@@ -73,14 +73,21 @@ fn main() -> Result<()> {
         // use Tera to expand template
         let mut tera = setup_tera(template_path).expect("Failed to setup Tera");
 
+        // use template filename as output filename
+        let my_filename = Path::new(template_path.file_name().unwrap());
+
         // setup rate limit
         let rate_limit = RateLimit::new(60, Duration::from_secs(60));
         let mut user_state = GcraState::default();
 
-        let directory_key = &opts.directory_key.unwrap();
+        /// keys used to look up category and title values used for output sub-directory
+        /// also used to inject slugified version (key + '_slug') back into Tera context for canonical URL
+        let category_key = &opts.category_subdirectory_key.expect("Context key for Category");
+        let title_key = &opts.title_subdirectory_key.expect("Context key for Title");
 
         let mut rendered: String;
 
+        
         for (idx, context) in contexts.iter().enumerate() {
             // let topic = context
             //     .get("topic")
@@ -90,7 +97,16 @@ fn main() -> Result<()> {
 
             trace!("Processing context[{}]: {:#?}", idx, context);
 
-            let tera_context: tera::Context = Context::from_value(context.to_owned())?;
+            // inject safe version of category and title to construct canonial url
+            let category = context.get(category_key).unwrap().as_str().unwrap();
+            let title = context.get(title_key).unwrap().as_str().unwrap();
+            let mut my_path = create_output_directory(&output_path, category, title);
+            my_path.push(my_filename);
+
+            let mut tera_context: tera::Context = Context::from_value(context.to_owned())?;
+            tera_context.insert(format!("{}{}", category_key, "_slug"), &slugify(category));
+            tera_context.insert(format!("{}{}", title_key, "_slug"), &slugify(title));
+            
             trace!("Tera context[{}]: {:#?}", idx, tera_context);
 
             // HACK: set cost=4 since currently calling openai via 4 prompts per template
@@ -102,16 +118,9 @@ fn main() -> Result<()> {
             rendered = tera.render_str(&template_string, &tera_context).unwrap();
             trace!("Rendered: {}", rendered);
 
-            let output_description = context.get(directory_key).unwrap().as_str().unwrap();
-            let mut my_path = create_output_directory(&output_path, output_description);
-
-            // use template filename as output filename
-            let my_filename = Path::new(template_path.file_name().unwrap());
-            my_path.push(my_filename);
-
             trace!("Writing output to {}", my_path.display());
 
-            let mut file = File::create(my_path).expect("Failed opening output file");
+            let mut file = File::create(my_path).expect("Cannot write output file");
             file.write_all(rendered.as_bytes())
                 .map_err(|e| e.to_string())
                 .unwrap();
@@ -292,25 +301,40 @@ fn openai_completion_tera_function(args: &HashMap<String, Value>) -> Result<Valu
     Ok(completion.to_string().trim().into())
 }
 
-fn create_output_directory(output_path: &Path, output_description: &str) -> PathBuf {
+/// get URL safe version of text
+fn slugify(text: &str) -> String {
     let re_non_alpha: Regex = Regex::new(r"\P{alpha}").unwrap();
     let re_spaces: Regex = Regex::new(r"[ ]+").unwrap();
 
-    let stripped = re_non_alpha.replace_all(output_description, " ");
-    let directory = re_spaces.replace_all(stripped.as_ref(), "_");
+    let text_alpha = re_non_alpha.replace_all(text, " ");
+    let text_underscore = re_spaces.replace_all(text_alpha.as_ref(), "_");
+
+    return text_underscore.into_owned();
+}
+
+/// create full output directory based on article category and title
+fn create_output_directory(output_base_path: &Path, category: &str, title: &str) -> PathBuf {
+
+
+    let category_slugify = slugify(category);
+    let title_slugify = slugify(title);
 
     trace!(
-        "Output Dir: '{}' -> '{}' -> '{}'",
-        output_description,
-        stripped,
-        directory
+        "Full Output Dir: '{:?}/{}/{}' -> '{:?}/{}/{}' ",
+        output_base_path,
+        category,
+        title,
+        output_base_path,
+        category_slugify,
+        title_slugify
     );
 
-    let mut my_path: PathBuf = PathBuf::from(output_path);
-    my_path.push(directory.as_ref());
+    let mut my_path: PathBuf = PathBuf::from(output_base_path);
+    my_path.push(category_slugify);
+    my_path.push(title_slugify);
 
     // create directory if not exist
-    match fs::create_dir(&my_path) {
+    match fs::create_dir_all(&my_path) {
         Err(e) => {
             trace!("Unable to create directory {:#?}: {}", my_path, e);
         }
