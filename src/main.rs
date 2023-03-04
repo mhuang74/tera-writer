@@ -172,7 +172,8 @@ fn main() -> Result<()> {
                 }
 
                 // throttle api call
-                while user_state.check_and_modify(&rate_limit, 1).is_err() {
+                // HACK: set cost=4 to slow things down in batch mode
+                while user_state.check_and_modify(&rate_limit, 4).is_err() {
                     trace!("Rate limited..sleeping");
                     thread::sleep(Duration::from_millis(1000));
                 }
