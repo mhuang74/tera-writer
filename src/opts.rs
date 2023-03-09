@@ -10,7 +10,12 @@ pub struct Opts {
     pub context: PathBuf,
 
     /// Tera template to inject JSON data into.
-    #[arg(short, long, requires = "category_subdirectory_key", requires = "title_subdirectory_key")]
+    #[arg(
+        short,
+        long,
+        requires = "category_subdirectory_key",
+        requires = "title_subdirectory_key"
+    )]
     pub template: Option<PathBuf>,
 
     /// Output path [Default: current directory]
@@ -18,10 +23,10 @@ pub struct Opts {
     pub output_path: Option<PathBuf>,
 
     /// Context key for category subdirectory in output path
-    #[arg(long="cat_sub")]
+    #[arg(long = "cat_sub")]
     pub category_subdirectory_key: Option<String>,
 
     /// Context key for title subdirectory in output path
-    #[arg(long="title_sub")]
+    #[arg(long = "title_sub")]
     pub title_subdirectory_key: Option<String>,
 }

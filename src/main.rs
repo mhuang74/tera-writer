@@ -12,7 +12,7 @@ use log::{debug, info, trace};
 use openai_api::{api::CompletionArgs, Client};
 use opts::*;
 use regex::Regex;
-use serde_json::{json, Map, Value, Number};
+use serde_json::{json, Map, Number, Value};
 use std::{
     collections::HashMap,
     fs::File,
@@ -80,14 +80,15 @@ fn main() -> Result<()> {
         let rate_limit = RateLimit::new(60, Duration::from_secs(60));
         let mut user_state = GcraState::default();
 
-        /// keys used to look up category and title values used for output sub-directory
-        /// also used to inject slugified version (key + '_slug') back into Tera context for canonical URL
-        let category_key = &opts.category_subdirectory_key.expect("Context key for Category");
+        // keys used to look up category and title values used for output sub-directory
+        // also used to inject slugified version (key + '_slug') back into Tera context for canonical URL
+        let category_key = &opts
+            .category_subdirectory_key
+            .expect("Context key for Category");
         let title_key = &opts.title_subdirectory_key.expect("Context key for Title");
 
         let mut rendered: String;
 
-        
         for (idx, context) in contexts.iter().enumerate() {
             // let topic = context
             //     .get("topic")
@@ -106,7 +107,7 @@ fn main() -> Result<()> {
             let mut tera_context: tera::Context = Context::from_value(context.to_owned())?;
             tera_context.insert(format!("{}{}", category_key, "_slug"), &slugify(category));
             tera_context.insert(format!("{}{}", title_key, "_slug"), &slugify(title));
-            
+
             trace!("Tera context[{}]: {:#?}", idx, tera_context);
 
             // HACK: set cost=4 since currently calling openai via 4 prompts per template
@@ -146,10 +147,18 @@ fn main() -> Result<()> {
             for (key, prompt_template) in prompt_template_map.as_object().unwrap() {
                 debug!("Prompt Template[{:#?}]: {:#?}", key, prompt_template);
 
-                let model = prompt_template.get("model").unwrap_or(&COMPLETION_MODEL_CURIE).as_str().unwrap();
+                let model = prompt_template
+                    .get("model")
+                    .unwrap_or(&COMPLETION_MODEL_CURIE)
+                    .as_str()
+                    .unwrap();
                 trace!("Model[{}]: {}", key, model);
 
-                let temperature = prompt_template.get("temperature").unwrap_or(&COMPLETION_TEMPERATURE_CREATIVE).as_f64().unwrap();
+                let temperature = prompt_template
+                    .get("temperature")
+                    .unwrap_or(&COMPLETION_TEMPERATURE_CREATIVE)
+                    .as_f64()
+                    .unwrap();
                 trace!("Temperature[{}]: {}", key, temperature);
 
                 let prompt_str = prompt_template.get("prompt").unwrap().as_str().unwrap();
@@ -218,7 +227,12 @@ fn main() -> Result<()> {
 const OPANAI_BATCH_SIZE: usize = 20;
 
 /// call openai completion sync api in batches of 20 prompts
-fn openai_completion_batch(model: &str, temperature: f64, prompts: Vec<String>, tokens: u64) -> Result<Vec<String>> {
+fn openai_completion_batch(
+    model: &str,
+    temperature: f64,
+    prompts: Vec<String>,
+    tokens: u64,
+) -> Result<Vec<String>> {
     let mut results: Vec<String> = Vec::<String>::with_capacity(prompts.len());
 
     for (batch_num, batch_prompts) in prompts.chunks(OPANAI_BATCH_SIZE).enumerate() {
@@ -310,13 +324,11 @@ fn slugify(text: &str) -> String {
     let text_alpha = re_non_alpha.replace_all(text, " ");
     let text_underscore = re_spaces.replace_all(text_alpha.as_ref(), "_");
 
-    return text_underscore.into_owned();
+    text_underscore.into_owned()
 }
 
 /// create full output directory based on article category and title
 fn create_output_directory(output_base_path: &Path, category: &str, title: &str) -> PathBuf {
-
-
     let category_slugify = slugify(category);
     let title_slugify = slugify(title);
 
