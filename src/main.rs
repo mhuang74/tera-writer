@@ -33,7 +33,7 @@ lazy_static! {
     };
 
     // completion defaults
-    static ref COMPLETION_MODEL_CURIE: Value = Value::String("text-curie-001".to_string());
+    static ref COMPLETION_MODEL_DAVINCI: Value = Value::String("text-davinci-003".to_string());
     static ref COMPLETION_TEMPERATURE_CREATIVE: Value = Value::Number(Number::from_f64(0.7f64).unwrap());
 }
 
@@ -149,7 +149,7 @@ fn main() -> Result<()> {
 
                 let model = prompt_template
                     .get("model")
-                    .unwrap_or(&COMPLETION_MODEL_CURIE)
+                    .unwrap_or(&COMPLETION_MODEL_DAVINCI)
                     .as_str()
                     .unwrap();
                 trace!("Model[{}]: {}", key, model);
@@ -303,7 +303,7 @@ fn openai_completion_tera_function(args: &HashMap<String, Value>) -> Result<Valu
     trace!("Prompt: {}", prompt);
 
     let completion_args = CompletionArgs::builder()
-        .model("text-curie-001")
+        .model(COMPLETION_MODEL_DAVINCI.to_string())
         .max_tokens(tokens)
         .temperature(0.7)
         .prompt(vec![prompt.to_owned()])
