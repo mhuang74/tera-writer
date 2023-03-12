@@ -250,7 +250,7 @@ fn openai_completion_batch(
         trace!("Completion[{}]: {:#?}", batch_num, completion);
 
         for idx in 0..batch_prompts.len() {
-            let completion_str = completion.choices[idx].text.trim();
+            let completion_str = completion.choices[idx].text.trim().trim();
             results.push(completion_str.to_owned());
         }
     }
