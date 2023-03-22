@@ -35,6 +35,9 @@ lazy_static! {
     // completion defaults
     static ref COMPLETION_MODEL_DAVINCI: Value = Value::String("text-davinci-003".to_string());
     static ref COMPLETION_TEMPERATURE_CREATIVE: Value = Value::Number(Number::from_f64(0.7f64).unwrap());
+    static ref COMPLETION_PRESENCE_PENALTY_DEFAULT: f64 = 0.5f64;
+    static ref COMPLETION_FREQUENCY_PENALTY_DEFAULT: f64 = 0.5f64;
+    static ref COMPLETION_STOP_SEQUENCES_DEFAULT: Vec<String> = vec!["#".into(), "===".into()];
 }
 
 fn main() -> Result<()> {
@@ -171,18 +174,18 @@ fn main() -> Result<()> {
 
                 for (idx, context) in contexts.iter().enumerate() {
                     let tera_context: tera::Context = Context::from_value(context.to_owned())?;
-                    trace!("Tera context[{}]: {:#?}", idx, tera_context);
+                    // trace!("Tera context[{}]: {:#?}", idx, tera_context);
 
                     let final_prompt = Tera::one_off(prompt_str, &tera_context, false).unwrap();
 
-                    trace!("Prompt[{}] for context[{}]: {}", key, idx, final_prompt);
+                    // trace!("Prompt[{}] for context[{}]: {}", key, idx, final_prompt);
 
                     prompts.push(final_prompt);
                 }
 
                 // throttle api call
-                // HACK: set cost=4 to slow things down in batch mode
-                while user_state.check_and_modify(&rate_limit, 4).is_err() {
+                // HACK: set cost=8 to slow things down in batch mode
+                while user_state.check_and_modify(&rate_limit, 8).is_err() {
                     trace!("Rate limited..sleeping");
                     thread::sleep(Duration::from_millis(1000));
                 }
@@ -239,13 +242,17 @@ fn openai_completion_batch(
         // construct CompletionArg with all prompts for current context
         let completion_args = CompletionArgs::builder()
             .model(model)
-            .max_tokens(tokens)
             .temperature(temperature)
+            .max_tokens(tokens)
+            .stop(COMPLETION_STOP_SEQUENCES_DEFAULT.to_vec())
+            .presence_penalty(*COMPLETION_PRESENCE_PENALTY_DEFAULT)
+            .frequency_penalty(*COMPLETION_FREQUENCY_PENALTY_DEFAULT)
             .prompt(batch_prompts)
             .build()
             .expect("Invalid Completion Prompt");
 
         // call Completion API
+        trace!("Completion Args[{}]: {:#?}", batch_num, completion_args);
         let completion = OPENAI_CLIENT.complete_prompt_sync(completion_args)?;
         trace!("Completion[{}]: {:#?}", batch_num, completion);
 
@@ -304,13 +311,15 @@ fn openai_completion_tera_function(args: &HashMap<String, Value>) -> Result<Valu
 
     let completion_args = CompletionArgs::builder()
         .model(COMPLETION_MODEL_DAVINCI.to_string())
+        .temperature(COMPLETION_TEMPERATURE_CREATIVE.as_f64().unwrap())
         .max_tokens(tokens)
-        .temperature(0.7)
+        .presence_penalty(*COMPLETION_PRESENCE_PENALTY_DEFAULT)
+        .frequency_penalty(*COMPLETION_FREQUENCY_PENALTY_DEFAULT)
         .prompt(vec![prompt.to_owned()])
         .build()?;
 
+    trace!("Completion Args: {:#?}", completion_args);
     let completion = OPENAI_CLIENT.complete_prompt_sync(completion_args).unwrap();
-
     trace!("Completion: {:#?}", completion);
 
     Ok(completion.to_string().trim().into())
