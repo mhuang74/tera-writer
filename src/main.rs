@@ -172,7 +172,7 @@ fn main() -> Result<()> {
 
                 let mut prompts = Vec::<String>::with_capacity(contexts.len());
 
-                for (idx, context) in contexts.iter().enumerate() {
+                for (_idx, context) in contexts.iter().enumerate() {
                     let tera_context: tera::Context = Context::from_value(context.to_owned())?;
                     // trace!("Tera context[{}]: {:#?}", idx, tera_context);
 
