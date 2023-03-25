@@ -79,9 +79,9 @@ fn main() -> Result<()> {
         // use template filename as output filename
         let my_filename = Path::new(template_path.file_name().unwrap());
 
-        // setup rate limit
-        let rate_limit = RateLimit::new(60, Duration::from_secs(60));
-        let mut user_state = GcraState::default();
+        // // setup rate limit
+        // let rate_limit = RateLimit::new(60, Duration::from_secs(60));
+        // let mut user_state = GcraState::default();
 
         // keys used to look up category and title values used for output sub-directory
         // also used to inject slugified version (key + '_slug') back into Tera context for canonical URL
@@ -113,11 +113,11 @@ fn main() -> Result<()> {
 
             trace!("Tera context[{}]: {:#?}", idx, tera_context);
 
-            // HACK: set cost=4 since currently calling openai via 4 prompts per template
-            while user_state.check_and_modify(&rate_limit, 4).is_err() {
-                trace!("Rate limited..sleeping");
-                thread::sleep(Duration::from_millis(1000));
-            }
+            // // HACK: set cost=4 since currently calling openai via 4 prompts per template
+            // while user_state.check_and_modify(&rate_limit, 4).is_err() {
+            //     trace!("Rate limited..sleeping");
+            //     thread::sleep(Duration::from_millis(1000));
+            // }
 
             rendered = tera.render_str(&template_string, &tera_context).unwrap();
             trace!("Rendered: {}", rendered);
